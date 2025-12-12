@@ -30,9 +30,9 @@ CREATE OR REPLACE PROCEDURE create_order_with_items(
 ) AS $$
 DECLARE
     v_available INT;
-    v_ticket_name VARCHAR(100);
+    v_ticket_name TEXT;
     v_event_id UUID;
-    v_event_title VARCHAR(255);
+    v_event_title TEXT;
 BEGIN
     -- Проверка существования пользователя
     IF NOT EXISTS (SELECT 1 FROM users WHERE id = p_user_id) THEN
@@ -123,7 +123,7 @@ CREATE OR REPLACE PROCEDURE cancel_order(
     OUT p_message TEXT
 ) AS $$
 DECLARE
-    v_order_status VARCHAR(50);
+    v_order_status TEXT;
     v_ticket_type_id UUID;
     v_quantity INT;
 BEGIN

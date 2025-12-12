@@ -72,8 +72,8 @@ CREATE TRIGGER trigger_update_ticket_quantity_on_delete
 CREATE TABLE IF NOT EXISTS order_audit (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id UUID NOT NULL,
-    old_status VARCHAR(50),
-    new_status VARCHAR(50),
+    old_status TEXT,
+    new_status TEXT,
     changed_at TIMESTAMP DEFAULT now(),
     changed_by TEXT DEFAULT current_user
 );
