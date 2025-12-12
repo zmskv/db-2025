@@ -15,20 +15,23 @@ BEGIN
     INSERT INTO event (organizer_id, title, description, location, start_time, end_time)
     SELECT id, 'Data Days', 'Конференция о данных', 'Москва',
            now() + interval '20 days', now() + interval '20 days 6 hours'
-    FROM organizer WHERE name = 'MTS True Tech'
-    ON CONFLICT DO NOTHING;
+    FROM organizer 
+    WHERE name = 'MTS True Tech'
+      AND NOT EXISTS (SELECT 1 FROM event WHERE title = 'Data Days');
 
     INSERT INTO event (organizer_id, title, description, location, start_time, end_time)
     SELECT id, 'Music Bridge', 'Фестиваль живой музыки', 'СПб',
            now() + interval '40 days', now() + interval '40 days 5 hours'
-    FROM organizer WHERE name = 'Zvuchok'
-    ON CONFLICT DO NOTHING;
+    FROM organizer 
+    WHERE name = 'Zvuchok'
+      AND NOT EXISTS (SELECT 1 FROM event WHERE title = 'Music Bridge');
 
     INSERT INTO event (organizer_id, title, description, location, start_time, end_time)
     SELECT id, 'Cloud Expo', 'Большая выставка облачных решений', 'Новосибирск',
            now() + interval '60 days', now() + interval '60 days 8 hours'
-    FROM organizer WHERE name = 'MTS True Tech'
-    ON CONFLICT DO NOTHING;
+    FROM organizer 
+    WHERE name = 'MTS True Tech'
+      AND NOT EXISTS (SELECT 1 FROM event WHERE title = 'Cloud Expo');
 
     -- Типы билетов для новых событий (добавятся, если их ещё нет)
     INSERT INTO ticket_type (event_id, name, price, quantity_total)
@@ -43,7 +46,10 @@ BEGIN
             ('Cloud Expo',   'Premium',  2800.00, 250)
     ) AS tt(event_title, name, price, qty)
     JOIN event e ON e.title = tt.event_title
-    ON CONFLICT DO NOTHING;
+    WHERE NOT EXISTS (
+        SELECT 1 FROM ticket_type tt_existing
+        WHERE tt_existing.event_id = e.id AND tt_existing.name = tt.name
+    );
 
     -- Массовое добавление пользователей
     INSERT INTO users (name, email, password_hash)
