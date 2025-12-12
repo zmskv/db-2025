@@ -55,12 +55,12 @@ ORDER BY e.title, total_revenue DESC;
 
 SELECT u.name AS user_name,
        u.email,
-       COUNT(DISTINCT o.id) AS total_orders,
+       COUNT(o.id) AS total_orders,
        SUM(oi.quantity * tt.price) AS total_spent
 FROM users u
 LEFT JOIN orders o ON u.id = o.user_id
 LEFT JOIN order_item oi ON o.id = oi.order_id
 LEFT JOIN ticket_type tt ON oi.ticket_type_id = tt.id
 GROUP BY u.name, u.email
-ORDER BY total_spent DESC NULLS LAST;
+ORDER BY total_spent DESC;
 

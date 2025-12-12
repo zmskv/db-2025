@@ -13,7 +13,7 @@ LEFT JOIN order_item oi ON o.id = oi.order_id
 LEFT JOIN ticket_type tt ON oi.ticket_type_id = tt.id
 GROUP BY u.id, u.name, u.email
 HAVING SUM(oi.quantity * tt.price) > 0 OR COUNT(DISTINCT o.id) = 0
-ORDER BY total_spent DESC NULLS LAST;
+ORDER BY total_spent DESC;
 
 -- Сводка по событиям с агрегированными показателями
 CREATE VIEW event_summary AS
@@ -55,5 +55,5 @@ LEFT JOIN orders o ON u.id = o.user_id
 LEFT JOIN order_item oi ON o.id = oi.order_id
 LEFT JOIN ticket_type tt ON oi.ticket_type_id = tt.id
 GROUP BY u.id, u.name, u.email
-ORDER BY orders_count DESC, total_spent DESC NULLS LAST;
+ORDER BY orders_count DESC, total_spent DESС;
 

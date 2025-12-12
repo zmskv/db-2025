@@ -7,7 +7,7 @@ INSERT INTO event (organizer_id, title, description, location, start_time, end_t
 SELECT id, 'Zvuchok Fest', 'Большой фестиваль музыки', 'Москва', '2025-06-01 18:00', '2025-06-01 23:00'
 FROM organizer WHERE name='Zvuchok';
 
-INSERT INTO event (organizer_id, title, description, location, start_time)
+INSERT INTO event (organizer_id, title, description, location, start_time, end_time)
 SELECT id, 'MTS Cloud Day', 'День Cloud-технологий', 'Москва', '2025-07-10 10:00', '2025-07-10 18:00'
 FROM organizer WHERE name='MTS True Tech';
 
