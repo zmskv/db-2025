@@ -1,6 +1,3 @@
--- Наполнение БД для демонстрации прироста от индексов (PostgreSQL)
--- Выполнять после lab2/ddl.sql и lab2/dml.sql.
--- Создает много записей, чтобы EXPLAIN ANALYZE показывал разницу.
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
@@ -33,7 +30,6 @@ BEGIN
     WHERE name = 'MTS True Tech'
       AND NOT EXISTS (SELECT 1 FROM event WHERE title = 'Cloud Expo');
 
-    -- Типы билетов для новых событий (добавятся, если их ещё нет)
     INSERT INTO ticket_type (event_id, name, price, quantity_total)
     SELECT e.id, tt.name, tt.price, tt.qty
     FROM (
@@ -61,7 +57,6 @@ BEGIN
     SELECT COUNT(*) INTO v_user_count FROM users;
     SELECT COUNT(*) INTO v_tt_count FROM ticket_type;
 
-    -- Массовое добавление заказов (случайные пользователи, даты и статусы)
     INSERT INTO orders (user_id, order_date, status)
     SELECT
         (SELECT id FROM users OFFSET floor(random() * v_user_count) LIMIT 1),
@@ -69,16 +64,14 @@ BEGIN
         (ARRAY['pending','completed','cancelled'])[ceil(random()*3)]
     FROM generate_series(1, v_order_to_add);
 
-    -- Позиции заказов: для большинства заказов создаем по 1-3 позиции
     INSERT INTO order_item (order_id, ticket_type_id, quantity)
     SELECT
         o.id,
         (SELECT id FROM ticket_type OFFSET floor(random() * v_tt_count) LIMIT 1),
         1 + floor(random()*3)::int
     FROM orders o
-    WHERE o.order_date >= now() - interval '90 days'; -- только новые сгенерированные
+    WHERE o.order_date >= now() - interval '90 days'; 
 
-    -- Обновляем проданные количества, чтобы отражали новые позиции
     UPDATE ticket_type tt
     SET quantity_sold = GREATEST(
         0,
@@ -86,5 +79,4 @@ BEGIN
     );
 END $$;
 
--- После выполнения запускайте EXPLAIN ANALYZE из lab4.sql до/после индексов.
 

@@ -1,6 +1,4 @@
--- Триггеры для лабораторной работы 3
-
--- 1. Триггер: Автоматическое обновление количества проданных билетов при добавлении позиции заказа
+-- Автоматическое обновление количества проданных билетов при добавлении позиции заказа
 CREATE OR REPLACE FUNCTION update_ticket_quantity_on_insert()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -8,7 +6,6 @@ DECLARE
     v_quantity_total INT;
     v_quantity_sold INT;
 BEGIN
-    -- Получаем текущее состояние типа билета
     SELECT quantity_total, quantity_sold INTO v_quantity_total, v_quantity_sold
     FROM ticket_type
     WHERE id = NEW.ticket_type_id;
@@ -17,14 +14,12 @@ BEGIN
         RAISE EXCEPTION 'Тип билета с ID % не найден', NEW.ticket_type_id;
     END IF;
     
-    -- Проверка доступности билетов
     v_available := v_quantity_total - v_quantity_sold;
     
     IF v_available < NEW.quantity THEN
         RAISE EXCEPTION 'Недостаточно билетов. Доступно: %, запрошено: %', v_available, NEW.quantity;
     END IF;
     
-    -- Обновление количества проданных билетов
     UPDATE ticket_type
     SET quantity_sold = quantity_sold + NEW.quantity
     WHERE id = NEW.ticket_type_id;
@@ -42,11 +37,10 @@ CREATE TRIGGER trigger_update_ticket_quantity_on_insert
     FOR EACH ROW
     EXECUTE FUNCTION update_ticket_quantity_on_insert();
 
--- 2. Триггер: Автоматическое обновление количества проданных билетов при удалении позиции заказа
+-- Автоматическое обновление количества проданных билетов при удалении позиции заказа
 CREATE OR REPLACE FUNCTION update_ticket_quantity_on_delete()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Возврат билетов при удалении позиции заказа
     UPDATE ticket_type
     SET quantity_sold = quantity_sold - OLD.quantity
     WHERE id = OLD.ticket_type_id;
@@ -68,7 +62,7 @@ CREATE TRIGGER trigger_update_ticket_quantity_on_delete
     FOR EACH ROW
     EXECUTE FUNCTION update_ticket_quantity_on_delete();
 
--- 3. Триггер: Аудит изменений заказов
+-- Аудит изменений заказов
 CREATE TABLE IF NOT EXISTS order_audit (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id UUID NOT NULL,
@@ -101,23 +95,20 @@ CREATE TRIGGER trigger_audit_order_changes
     WHEN (OLD.status IS DISTINCT FROM NEW.status)
     EXECUTE FUNCTION audit_order_changes();
 
--- 4. Триггер: Проверка бизнес-правил при обновлении количества в позиции заказа
+-- Проверка бизнес-правил при обновлении количества в позиции заказа
 CREATE OR REPLACE FUNCTION validate_order_item_update()
 RETURNS TRIGGER AS $$
 DECLARE
     v_available INT;
     v_quantity_diff INT;
 BEGIN
-    -- Вычисляем разницу в количестве
     v_quantity_diff := NEW.quantity - OLD.quantity;
     
     IF v_quantity_diff = 0 THEN
         RETURN NEW;
     END IF;
     
-    -- Если увеличиваем количество, проверяем доступность
     IF v_quantity_diff > 0 THEN
-        -- Учитываем, что OLD.quantity уже учтено в quantity_sold
         SELECT (quantity_total - quantity_sold + OLD.quantity) INTO v_available
         FROM ticket_type
         WHERE id = NEW.ticket_type_id;
@@ -126,13 +117,11 @@ BEGIN
             RAISE EXCEPTION 'Недостаточно билетов для увеличения количества. Доступно: %, требуется: %', 
                             v_available, NEW.quantity;
         END IF;
-        
-        -- Обновляем количество проданных билетов (вычитаем старое, добавляем новое)
         UPDATE ticket_type
         SET quantity_sold = quantity_sold - OLD.quantity + NEW.quantity
         WHERE id = NEW.ticket_type_id;
     ELSE
-        -- Если уменьшаем количество, возвращаем билеты
+
         UPDATE ticket_type
         SET quantity_sold = quantity_sold - OLD.quantity + NEW.quantity
         WHERE id = NEW.ticket_type_id;

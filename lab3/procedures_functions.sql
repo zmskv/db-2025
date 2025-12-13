@@ -1,6 +1,3 @@
--- Процедуры и функции для лабораторной работы 3
-
--- 1. Функция: Проверка доступности билетов
 CREATE OR REPLACE FUNCTION check_ticket_availability(
     p_ticket_type_id UUID,
     p_quantity INT
@@ -20,7 +17,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 2. Процедура: Создание заказа с проверкой доступности билетов
 CREATE OR REPLACE PROCEDURE create_order_with_items(
     p_user_id UUID,
     p_ticket_type_id UUID,
@@ -34,12 +30,10 @@ DECLARE
     v_event_id UUID;
     v_event_title TEXT;
 BEGIN
-    -- Проверка существования пользователя
     IF NOT EXISTS (SELECT 1 FROM users WHERE id = p_user_id) THEN
         RAISE EXCEPTION 'Пользователь с ID % не найден', p_user_id;
     END IF;
     
-    -- Проверка существования типа билета
     SELECT name, event_id INTO v_ticket_name, v_event_id
     FROM ticket_type
     WHERE id = p_ticket_type_id;
@@ -48,7 +42,6 @@ BEGIN
         RAISE EXCEPTION 'Тип билета с ID % не найден', p_ticket_type_id;
     END IF;
     
-    -- Проверка доступности билетов
     SELECT (quantity_total - quantity_sold) INTO v_available
     FROM ticket_type
     WHERE id = p_ticket_type_id;
@@ -57,12 +50,10 @@ BEGIN
         RAISE EXCEPTION 'Недостаточно билетов. Доступно: %, запрошено: %', v_available, p_quantity;
     END IF;
     
-    -- Создание заказа
     INSERT INTO orders (user_id, status)
     VALUES (p_user_id, 'pending')
     RETURNING id INTO p_order_id;
     
-    -- Добавление позиции заказа (триггер автоматически обновит quantity_sold)
     INSERT INTO order_item (order_id, ticket_type_id, quantity)
     VALUES (p_order_id, p_ticket_type_id, p_quantity);
     
@@ -83,7 +74,6 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 
--- 3. Функция: Получение статистики по пользователю
 CREATE OR REPLACE FUNCTION get_user_order_stats(
     p_user_id UUID
 ) RETURNS TABLE(
@@ -96,7 +86,6 @@ CREATE OR REPLACE FUNCTION get_user_order_stats(
 DECLARE
     v_user_exists BOOLEAN;
 BEGIN
-    -- Проверка существования пользователя
     SELECT EXISTS(SELECT 1 FROM users WHERE id = p_user_id) INTO v_user_exists;
     
     IF NOT v_user_exists THEN
@@ -117,7 +106,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 4. Процедура: Отмена заказа с возвратом билетов
 CREATE OR REPLACE PROCEDURE cancel_order(
     p_order_id UUID,
     OUT p_message TEXT
@@ -127,7 +115,6 @@ DECLARE
     v_ticket_type_id UUID;
     v_quantity INT;
 BEGIN
-    -- Проверка существования заказа
     SELECT status INTO v_order_status
     FROM orders
     WHERE id = p_order_id;
@@ -140,7 +127,6 @@ BEGIN
         RAISE EXCEPTION 'Заказ уже отменен';
     END IF;
     
-    -- Возврат билетов для каждой позиции заказа
     FOR v_ticket_type_id, v_quantity IN
         SELECT ticket_type_id, quantity
         FROM order_item
@@ -155,7 +141,6 @@ BEGIN
         END IF;
     END LOOP;
     
-    -- Отмена заказа
     UPDATE orders
     SET status = 'cancelled'
     WHERE id = p_order_id;
